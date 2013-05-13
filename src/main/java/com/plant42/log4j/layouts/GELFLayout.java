@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * @autor Johannes Graf - graf@synyx.de
  */
-public class GelfLayout extends Layout {
+public class GELFLayout extends Layout {
 
     private static final String VERSION = "1.0";
     private static final Integer LEVEL = 1;

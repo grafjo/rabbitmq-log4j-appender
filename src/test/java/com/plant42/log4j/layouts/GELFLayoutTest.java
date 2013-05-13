@@ -17,18 +17,18 @@ import java.net.UnknownHostException;
 /**
  * @author Johannes Graf - graf@synyx.de
  */
-public class GelfLayoutTest {
+public class GELFLayoutTest {
 
     private ObjectMapper mapper;
-    private GelfLayout gelfLayout;
+    private GELFLayout gelfLayout;
     private Logger logger;
     private String hostname;
 
     @Before
     public void setup() throws UnknownHostException {
         mapper = new ObjectMapper();
-        gelfLayout = new GelfLayout();
-        logger = Logger.getLogger("GelfLayoutTest");
+        gelfLayout = new GELFLayout();
+        logger = Logger.getLogger("GELFLayoutTest");
         hostname = InetAddress.getLocalHost().getHostName();
     }
 
@@ -48,7 +48,7 @@ public class GelfLayoutTest {
     @Test
     public void formatNormalEvent() throws IOException {
 
-        Logger logger = Logger.getLogger("GelfLayoutTest");
+        Logger logger = Logger.getLogger("GELFLayoutTest");
         Level level = Level.ERROR;
         String message = "I'm the message!";
         Throwable throwable = new IOException();
