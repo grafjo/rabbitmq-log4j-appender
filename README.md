@@ -22,7 +22,7 @@ The configuration is simple:
         &lt;param name="durable" value="false"/&gt;
         &lt;param name="queue" value="log4j-queue"/&gt;
         &lt;param name="routingKey" value=""/&gt;
-        &lt;layout class="com.plant42.log4j.layouts.GelfLayout" /&gt;
+        &lt;layout class="com.plant42.log4j.layouts.GELFLayout" /&gt;
     &lt;/appender&gt;
     &lt;root&gt;
         &lt;level value="ERROR"/&gt;
