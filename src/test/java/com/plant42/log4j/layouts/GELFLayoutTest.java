@@ -6,13 +6,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LoggingEvent;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Johannes Graf - graf@synyx.de
@@ -23,6 +26,9 @@ public class GELFLayoutTest {
     private GELFLayout gelfLayout;
     private Logger logger;
     private String hostname;
+    private StackTraceElement[] stackTraceElements;
+    private String stackTraceMessage;
+    private Throwable throwable;
 
     @Before
     public void setup() throws UnknownHostException {
@@ -30,6 +36,21 @@ public class GELFLayoutTest {
         gelfLayout = new GELFLayout();
         logger = Logger.getLogger("GELFLayoutTest");
         hostname = InetAddress.getLocalHost().getHostName();
+
+        stackTraceElements = new StackTraceElement[]{
+                new StackTraceElement("org.junit.runner.JUnitCore", "run", "JUnitCore.java", 160),
+                new StackTraceElement("com.intellij.junit4.JUnit4IdeaTestRunner", "startRunnerWithArgs", "JUnit4IdeaTestRunner.java", 77),
+                new StackTraceElement("com.intellij.rt.execution.junit.JUnitStarter", "prepareStreamsAndStart", "JUnitStarter.java", 195),
+                new StackTraceElement("com.intellij.rt.execution.junit.JUnitStarter", "main", "JUnitStarter.java", 63)
+        };
+
+        throwable = new IOException();
+        throwable.setStackTrace(stackTraceElements);
+
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        throwable.printStackTrace(pw);
+        stackTraceMessage = sw.toString();
     }
 
     /**
@@ -48,26 +69,24 @@ public class GELFLayoutTest {
     @Test
     public void formatNormalEvent() throws IOException {
 
-        Logger logger = Logger.getLogger("GELFLayoutTest");
         Level level = Level.ERROR;
         String message = "I'm the message!";
-        Throwable throwable = new IOException();
         LoggingEvent event = new LoggingEvent(Logger.class.getName(), logger, level, message, throwable);
+
+        String expectedFullMessage = message + "\n" + stackTraceMessage;
+        String expectedShortMessage = expectedFullMessage.substring(0, GELFLayout.MAX_SHORT_MESSAGE_LENGTH - 1);
 
         final JsonNode gelfMessage = mapper.readTree(gelfLayout.format(event));
 
-        Assert.assertEquals("1.0", gelfMessage.get("version").asText());
-        Assert.assertEquals(hostname, gelfMessage.get("host").asText());
-        Assert.assertEquals("I'm the message!", gelfMessage.get("short_message").asText());
-        Assert.assertEquals("I'm the message!", gelfMessage.get("full_message").asText());
-        Assert.assertEquals(event.getTimeStamp(), gelfMessage.get("timestamp").longValue());
-        Assert.assertEquals(level.getSyslogEquivalent(), gelfMessage.get("level").asInt());
-        Assert.assertEquals("GELF", gelfMessage.get("facility").asText());
-        Assert.assertEquals("?", gelfMessage.get("file").asText());
-        Assert.assertEquals("?", gelfMessage.get("line").asText());
-
-        Assert.assertTrue(gelfMessage.has("_stackTrace"));
-        Assert.assertTrue(gelfMessage.has("_throwable"));
+        assertEquals(GELFLayout.VERSION, gelfMessage.get("version").asText());
+        assertEquals(hostname, gelfMessage.get("host").asText());
+        assertEquals(expectedShortMessage, gelfMessage.get("short_message").asText());
+        assertEquals(expectedFullMessage, gelfMessage.get("full_message").asText());
+        assertEquals(event.getTimeStamp(), gelfMessage.get("timestamp").longValue());
+        assertEquals(level.getSyslogEquivalent(), gelfMessage.get("level").asInt());
+        assertEquals(GELFLayout.FACILITY, gelfMessage.get("facility").asText());
+        assertEquals("JUnitCore.java", gelfMessage.get("file").asText());
+        assertEquals("160", gelfMessage.get("line").asText());
     }
 
     /**
@@ -92,17 +111,12 @@ public class GELFLayoutTest {
 
         final JsonNode gelfMessage = mapper.readTree(gelfLayout.format(event));
 
-        Assert.assertEquals("1.0", gelfMessage.get("version").asText());
-        Assert.assertEquals(hostname, gelfMessage.get("host").asText());
-        Assert.assertEquals("I'm the message!", gelfMessage.get("short_message").asText());
-        Assert.assertEquals("I'm the message!", gelfMessage.get("full_message").asText());
-        Assert.assertEquals(event.getTimeStamp(), gelfMessage.get("timestamp").longValue());
-        Assert.assertEquals(level.getSyslogEquivalent(), gelfMessage.get("level").asInt());
-        Assert.assertEquals("GELF", gelfMessage.get("facility").asText());
-        Assert.assertEquals("?", gelfMessage.get("file").asText());
-        Assert.assertEquals("?", gelfMessage.get("line").asText());
-
-        Assert.assertFalse(gelfMessage.has("_stackTrace"));
-        Assert.assertFalse(gelfMessage.has("_throwable"));
+        assertEquals(GELFLayout.VERSION, gelfMessage.get("version").asText());
+        assertEquals(hostname, gelfMessage.get("host").asText());
+        assertEquals(message, gelfMessage.get("short_message").asText());
+        assertEquals(message, gelfMessage.get("full_message").asText());
+        assertEquals(event.getTimeStamp(), gelfMessage.get("timestamp").longValue());
+        assertEquals(level.getSyslogEquivalent(), gelfMessage.get("level").asInt());
+        assertEquals(GELFLayout.FACILITY, gelfMessage.get("facility").asText());
     }
 }
