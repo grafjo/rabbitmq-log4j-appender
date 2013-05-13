@@ -1,3 +1,6 @@
+.idea/
+.gradle/
+build/
 target/
 clustering.ipr
 clustering.iws
